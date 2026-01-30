@@ -70,7 +70,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: saydullox/marketplace-app
+          images: ${{ secrets.DOCKER_HUB_USERNAME }}/marketplace-app
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -133,7 +133,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.20.0
         with:
-          image-ref: 'saydullox/marketplace-app:${{ github.sha }}'
+          image-ref: '${{ secrets.DOCKER_HUB_USERNAME }}/marketplace-app:${{ github.sha }}'
           format: 'sarif'
           output: 'trivy-results.sarif'
 
@@ -146,7 +146,7 @@ jobs:
       - name: Run Trivy vulnerability scanner (table output)
         uses: aquasecurity/trivy-action@0.20.0
         with:
-          image-ref: 'saydullox/marketplace-app:${{ github.sha }}'
+          image-ref: '${{ secrets.DOCKER_HUB_USERNAME }}/marketplace-app:${{ github.sha }}'
           format: 'table'
           severity: 'CRITICAL,HIGH'
           ignore-unfixed: true

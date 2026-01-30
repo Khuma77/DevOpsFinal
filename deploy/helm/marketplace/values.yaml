@@ -2,7 +2,7 @@
 replicaCount: 2
 
 image:
-  repository: saydullox/marketplace-app
+  repository: YOUR_DOCKER_USERNAME/marketplace-app  # GitHub Actions bu yerga o'z username'ni qo'yadi
   pullPolicy: IfNotPresent
   tag: "latest"
 
