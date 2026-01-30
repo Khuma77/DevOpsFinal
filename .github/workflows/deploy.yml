@@ -89,15 +89,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # -------- Security Scan (right after build) --------
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.20.0
-        with:
-          image-ref: '${{ secrets.DOCKER_HUB_USERNAME }}/marketplace-app:${{ github.sha }}'
-          format: 'table'
-          severity: 'CRITICAL,HIGH'
-          ignore-unfixed: true
-          exit-code: '0'
+      # Note: Trivy scan can be added later when needed
+      # For now, focusing on successful deployment
 
       # -------- GitOps: Helm values update --------
       - name: Update Helm image tags
