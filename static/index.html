@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marketplace | Добро пожаловать</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f9fafb;
+      color: #111827;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .card {
+      background: white;
+      padding: 3rem 2.5rem;
+      border-radius: 1rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      max-width: 480px;
+      width: 90%;
+      text-align: center;
+    }
+    h1 {
+      color: #4f46e5;
+      margin-bottom: 1.25rem;
+      font-size: 2.25rem;
+    }
+    p {
+      color: #6b7280;
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+    .links a {
+      color: #4f46e5;
+      text-decoration: none;
+      font-weight: 600;
+      margin: 0 1rem;
+      transition: color 0.2s;
+    }
+    .links a:hover {
+      color: #4338ca;
+      text-decoration: underline;
+    }
+    .test-link {
+      margin-top: 2rem;
+      font-size: 0.95rem;
+    }
+    .test-link a {
+      color: #4f46e5;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Backend работает ✓</h1>
+    <p>Соединение с Google Sheets установлено.<br>Можно начинать работу с фронтендом.</p>
+    
+    <div class="links">
+      <a href="/static/login.html">Войти</a> |
+      <a href="/static/register.html">Регистрация</a>
+    </div>
+
+    <div class="test-link">
+      <a href="/test">Проверить связь с таблицей → /test</a><br>
+      <a href="/docs">Открыть документацию API (Swagger)</a>
+    </div>
+  </div>
+</body>
+</html>

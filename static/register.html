@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Регистрация — Marketplace</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .password-wrapper { position: relative; }
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      top: 38px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      font-size: 1.2rem;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1 style="text-align:center; margin-bottom:2rem;">Регистрация</h1>
+
+      <form id="registerForm">
+        <div class="input-group">
+          <label for="username">Имя пользователя *</label>
+          <input type="text" id="username" required minlength="3" placeholder="samandar">
+        </div>
+
+        <div class="input-group password-wrapper">
+          <label for="password">Пароль *</label>
+          <input type="password" id="password" required minlength="6" placeholder="••••••••">
+          <span class="toggle-password" onclick="togglePassword('password')">👁</span>
+        </div>
+
+        <div class="input-group">
+          <label for="role">Роль *</label>
+          <select id="role" required>
+            <option value="" disabled selected>Выберите роль</option>
+            <option value="customer">Покупатель</option>
+            <option value="seller">Продавец</option>
+            <option value="logist">Логист</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label for="full_name">ФИО (опционально)</label>
+          <input type="text" id="full_name" placeholder="Samandar Abdusamatov">
+        </div>
+
+        <div class="input-group">
+          <label for="phone">Телефон *</label>
+          <input type="tel" id="phone" required placeholder="+998901234567">
+        </div>
+
+        <div id="errorMsg" class="error-message" style="text-align:center;"></div>
+        <div id="successMsg" class="success-message" style="display:none;"></div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%; margin-top:1.5rem; font-size:1.05rem;">
+          Зарегистрироваться
+        </button>
+      </form>
+
+      <p style="text-align:center; margin-top:1.5rem;">
+        Уже есть аккаунт? <a href="login.html" style="color:var(--accent);">Войти</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="js/main.js"></script>
+  <script>
+    function togglePassword(id) {
+      const input = document.getElementById(id);
+      const icon = input.nextElementSibling;
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.textContent = '🙈';
+      } else {
+        input.type = 'password';
+        icon.textContent = '👁';
+      }
+    }
+
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const role = document.getElementById('role').value;
+      const full_name = document.getElementById('full_name').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+
+      const errorEl = document.getElementById('errorMsg');
+      const successEl = document.getElementById('successMsg');
+
+      errorEl.style.display = 'none';
+      successEl.style.display = 'none';
+
+      if (username.length < 3) {
+        errorEl.textContent = 'Имя пользователя минимум 3 символа';
+        errorEl.style.display = 'block';
+        return;
+      }
+      if (password.length < 6) {
+        errorEl.textContent = 'Пароль минимум 6 символов';
+        errorEl.style.display = 'block';
+        return;
+      }
+      if (!role) {
+        errorEl.textContent = 'Выберите роль';
+        errorEl.style.display = 'block';
+        return;
+      }
+      if (!phone.match(/^\+998[0-9]{9}$/)) {
+        errorEl.textContent = 'Телефон: +998XXXXXXXXX';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append('username', username);
+        formData.append('password', password);
+        formData.append('role', role);
+        formData.append('full_name', full_name);
+        formData.append('phone', phone);
+
+        await apiFetch('/api/register', { method: 'POST', body: formData });
+
+        successEl.textContent = 'Регистрация успешна! Перенаправляем...';
+        successEl.style.display = 'block';
+
+        setTimeout(() => window.location.href = 'login.html', 2000);
+      } catch (err) {
+        let msg = err.message;
+        if (msg.includes('already exists')) msg = 'Такой username занят';
+        if (msg.includes('72 bytes')) msg = 'Пароль слишком длинный';
+        errorEl.textContent = msg;
+        errorEl.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>

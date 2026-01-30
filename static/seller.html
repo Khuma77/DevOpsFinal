@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Мои товары — Marketplace</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="dashboard-header">
+      <h1>Мои товары</h1>
+      <button class="btn btn-outline" onclick="logout()">Выйти</button>
+    </div>
+
+    <!-- Форма добавления товара -->
+    <div class="card">
+      <h2>Добавить новый товар</h2>
+      <form id="addProductForm">
+        <div class="input-group">
+          <label for="name">Название товара *</label>
+          <input type="text" id="name" required placeholder="Например: Беспроводные наушники">
+        </div>
+
+        <div class="input-group">
+          <label for="price">Цена (сум) *</label>
+          <input type="number" id="price" required min="1" step="1" placeholder="150000">
+        </div>
+
+        <div class="input-group">
+          <label for="description">Описание</label>
+          <textarea id="description" rows="3" placeholder="Короткое описание товара..."></textarea>
+        </div>
+
+        <div class="input-group">
+          <label for="stock">Количество на складе *</label>
+          <input type="number" id="stock" required min="0" step="1" value="10">
+        </div>
+
+        <div class="input-group">
+          <label for="image_url">Ссылка на картинку (опционально)</label>
+          <input type="url" id="image_url" placeholder="https://example.com/image.jpg">
+        </div>
+
+        <div id="addError" class="error-message" style="text-align:center;"></div>
+        <div id="addSuccess" class="success-message" style="display:none;"></div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;">
+          Добавить товар
+        </button>
+      </form>
+    </div>
+
+    <!-- Список моих товаров -->
+    <h2 style="margin-top:2.5rem;">Ваши товары</h2>
+    <div id="loader" class="loader" style="display:block;"></div>
+    <div id="productsGrid" class="card-grid" style="display:none;"></div>
+    <div id="listError" class="error-message" style="text-align:center; display:none;"></div>
+  </div>
+
+  <script src="js/main.js"></script>
+  <script>
+    const sellerId = getUserId();
+
+    if (!sellerId) {
+      window.location.href = 'login.html';
+    }
+
+    // Загрузка списка товаров продавца
+    async function loadMyProducts() {
+      try {
+        const data = await apiFetch(`/api/products/my?seller_id=${sellerId}`);
+        const grid = document.getElementById('productsGrid');
+        const loader = document.getElementById('loader');
+        loader.style.display = 'none';
+        grid.style.display = 'grid';
+
+        if (data.length === 0) {
+          grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;">У вас пока нет товаров</p>';
+          return;
+        }
+
+        grid.innerHTML = data.map(p => `
+          <div class="card product-card">
+            ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" style="border-radius:var(--radius)">` : ''}
+            <div class="content">
+              <h3>${p.name}</h3>
+              <div class="price">${p.price} сум</div>
+              <p style="font-size:0.9rem;color:var(--text-secondary);">${p.description || 'Без описания'}</p>
+              <div style="margin-top:0.75rem;font-size:0.9rem;">
+                На складе: <strong>${p.stock}</strong>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        showError('listError', err.message);
+        document.getElementById('loader').style.display = 'none';
+      }
+    }
+
+    // Добавление товара
+    document.getElementById('addProductForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById('name').value.trim();
+      const price = parseFloat(document.getElementById('price').value);
+      const description = document.getElementById('description').value.trim();
+      const stock = parseInt(document.getElementById('stock').value);
+      const image_url = document.getElementById('image_url').value.trim();
+
+      const errorEl = document.getElementById('addError');
+      const successEl = document.getElementById('addSuccess');
+
+      errorEl.style.display = 'none';
+      successEl.style.display = 'none';
+
+      if (!name || isNaN(price) || isNaN(stock)) {
+        showError('addError', 'Заполните обязательные поля корректно');
+        return;
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append('seller_id', sellerId);
+        formData.append('name', name);
+        formData.append('price', price);
+        formData.append('description', description);
+        formData.append('stock', stock);
+        formData.append('image_url', image_url);
+
+        await apiFetch('/api/products', { method: 'POST', body: formData });
+
+        successEl.textContent = 'Товар успешно добавлен!';
+        successEl.style.display = 'block';
+
+        // Очистка формы
+        document.getElementById('addProductForm').reset();
+
+        // Перезагрузка списка
+        loadMyProducts();
+      } catch (err) {
+        showError('addError', err.message);
+      }
+    });
+
+    function logout() {
+      localStorage.removeItem('user_id');
+      window.location.href = 'login.html';
+    }
+
+    // Загрузка при открытии страницы
+    window.addEventListener('load', loadMyProducts);
+  </script>
+</body>
+</html>

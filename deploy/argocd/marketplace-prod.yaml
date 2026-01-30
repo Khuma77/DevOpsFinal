@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: marketplace-prod
+  namespace: argocd
+  labels:
+    app: marketplace
+    environment: prod
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/your-org/marketplace.git
+    targetRevision: HEAD
+    path: deploy/helm/marketplace
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-prod.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: marketplace-prod
+  syncPolicy:
+    # Production requires manual approval
+    automated:
+      prune: false
+      selfHeal: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
+  revisionHistoryLimit: 20

@@ -1,0 +1,17 @@
+apiVersion: v2
+name: marketplace
+description: FastAPI Marketplace application with Google Sheets backend
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - marketplace
+  - fastapi
+  - python
+  - google-sheets
+home: https://github.com/your-org/marketplace
+sources:
+  - https://github.com/your-org/marketplace
+maintainers:
+  - name: DevOps Team
+    email: devops@company.com

@@ -1,0 +1,109 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Marketplace Monitoring Dashboard",
+    "tags": ["marketplace", "business", "metrics"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Request Rate",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(marketplace_requests_total[5m])",
+            "legendFormat": "{{method}} {{endpoint}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Response Time",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(marketplace_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "User Registrations",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "marketplace_user_registrations_total",
+            "legendFormat": "{{role}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 8}
+      },
+      {
+        "id": 4,
+        "title": "Orders Created",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "marketplace_orders_created_total"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 8}
+      },
+      {
+        "id": 5,
+        "title": "Active Products",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "marketplace_active_products"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 8, "x": 16, "y": 8}
+      },
+      {
+        "id": 6,
+        "title": "Orders by Status",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "marketplace_pending_orders",
+            "legendFormat": "{{status}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
+      },
+      {
+        "id": 7,
+        "title": "Google Sheets Operations",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(marketplace_google_sheets_operations_total[5m])",
+            "legendFormat": "{{operation}} {{sheet}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+      },
+      {
+        "id": 8,
+        "title": "Application Logs",
+        "type": "logs",
+        "targets": [
+          {
+            "expr": "{job=\"marketplace-app\"}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 24}
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "5s"
+  }
+}

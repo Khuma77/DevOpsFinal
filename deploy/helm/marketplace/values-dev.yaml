@@ -1,0 +1,29 @@
+# Development environment values
+replicaCount: 1
+
+image:
+  tag: "dev"
+
+ingress:
+  hosts:
+    - host: marketplace-dev.company.com
+      paths:
+        - path: /
+          pathType: Prefix
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+autoscaling:
+  enabled: false
+
+env:
+  - name: ENVIRONMENT
+    value: "development"
+  - name: LOG_LEVEL
+    value: "DEBUG"

@@ -1,0 +1,16 @@
+{{- if and .Values.monitoring.enabled .Values.monitoring.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "marketplace.fullname" . }}
+  labels:
+    {{- include "marketplace.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "marketplace.selectorLabels" . | nindent 6 }}
+  endpoints:
+  - port: http
+    path: {{ .Values.monitoring.serviceMonitor.path | default "/metrics" }}
+    interval: {{ .Values.monitoring.serviceMonitor.interval | default "30s" }}
+{{- end }}

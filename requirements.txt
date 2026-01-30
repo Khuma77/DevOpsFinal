@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+gspread
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+python-dotenv          # если хочешь .env для настроек
+passlib[bcrypt]        # для хэширования паролей (опционально на старте)
+prometheus-client      # Prometheus metrics
+structlog             # Structured logging for Loki
+python-json-logger    # JSON logging format

@@ -1,0 +1,13 @@
+# dashboards.yml - Dashboard provisioning configuration
+apiVersion: 1
+
+providers:
+  - name: 'marketplace-dashboards'
+    orgId: 1
+    folder: 'Marketplace'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

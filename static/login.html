@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Вход — Marketplace</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .password-wrapper { position: relative; }
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      top: 38px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      font-size: 1.2rem;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1 style="text-align:center; margin-bottom:2rem;">Вход</h1>
+
+      <form id="loginForm">
+        <div class="input-group">
+          <label for="username">Имя пользователя</label>
+          <input type="text" id="username" required placeholder="samandar">
+        </div>
+
+        <div class="input-group password-wrapper">
+          <label for="password">Пароль</label>
+          <input type="password" id="password" required placeholder="••••••••">
+          <span class="toggle-password" onclick="togglePassword('password')">👁</span>
+        </div>
+
+        <div id="errorMsg" class="error-message" style="text-align:center;"></div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%; margin-top:1.5rem;">
+          Войти
+        </button>
+      </form>
+
+      <p style="text-align:center; margin-top:1.5rem;">
+        Нет аккаунта? <a href="register.html" style="color:var(--accent);">Зарегистрироваться</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="js/main.js"></script>
+  <script>
+    function togglePassword(id) {
+      const input = document.getElementById(id);
+      const icon = input.nextElementSibling;
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.textContent = '🙈';
+      } else {
+        input.type = 'password';
+        icon.textContent = '👁';
+      }
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const errorEl = document.getElementById('errorMsg');
+
+      errorEl.style.display = 'none';
+
+      try {
+        const formData = new FormData();
+        formData.append('username', username);
+        formData.append('password', password);
+
+        const data = await apiFetch('/api/login', { method: 'POST', body: formData });
+
+        saveUserId(data.user_id);
+        window.location.href = data.redirect;
+      } catch (err) {
+        let msg = err.message;
+        if (msg.includes('not found')) msg = 'Пользователь не найден';
+        if (msg.includes('password')) msg = 'Неверный пароль';
+        errorEl.textContent = msg;
+        errorEl.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>

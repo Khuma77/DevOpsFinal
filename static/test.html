@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Тест связи с Google Sheets</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f9fafb;
+      color: #111827;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .card {
+      background: white;
+      padding: 2.5rem 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      max-width: 500px;
+      width: 90%;
+    }
+    h1 {
+      color: #4f46e5;
+      text-align: center;
+      margin-bottom: 1.5rem;
+      font-size: 1.8rem;
+    }
+    .status {
+      text-align: center;
+      font-size: 1.1rem;
+      margin: 1.5rem 0;
+      padding: 1rem;
+      border-radius: 0.5rem;
+    }
+    .success { background: #ecfdf5; color: #065f46; }
+    .error   { background: #fef2f2; color: #991b1b; }
+    .info {
+      margin: 1.5rem 0;
+      font-size: 0.95rem;
+      color: #4b5563;
+    }
+    dl { margin: 1rem 0; }
+    dt { font-weight: 600; color: #374151; margin-top: 1rem; }
+    dd { margin-left: 0; padding-left: 1rem; border-left: 3px solid #e5e7eb; }
+    pre { background: #f3f4f6; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; }
+    .back {
+      text-align: center;
+      margin-top: 2rem;
+    }
+    .back a {
+      color: #4f46e5;
+      font-weight: 500;
+      text-decoration: none;
+    }
+    .back a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Тест соединения с Google Sheets</h1>
+    <div id="status" class="status">Загрузка...</div>
+    <div id="content" class="info"></div>
+    <div class="back">
+      <a href="/">← Вернуться на главную</a>
+    </div>
+  </div>
+
+  <script>
+    fetch('/api/test')
+      .then(res => res.json())
+      .then(data => {
+        const statusEl = document.getElementById('status');
+        const contentEl = document.getElementById('content');
+
+        if (data.status === 'success') {
+          statusEl.className = 'status success';
+          statusEl.textContent = 'Соединение успешно ✓';
+          contentEl.innerHTML = `
+            <dl>
+              <dt>Количество пользователей в таблице:</dt>
+              <dd>${data.users_in_table}</dd>
+              <dt>Пример записи (первый пользователь):</dt>
+              <dd><pre>${JSON.stringify(data.example_user, null, 2)}</pre></dd>
+              <dt>Время сервера:</dt>
+              <dd>${data.server_time}</dd>
+            </dl>
+          `;
+        } else {
+          statusEl.className = 'status error';
+          statusEl.textContent = 'Ошибка соединения';
+          contentEl.innerHTML = `<p>${data.message}</p>`;
+        }
+      })
+      .catch(err => {
+        document.getElementById('status').className = 'status error';
+        document.getElementById('status').textContent = 'Не удалось подключиться к API';
+        document.getElementById('content').innerHTML = `<p>${err.message}</p>`;
+      });
+  </script>
+</body>
+</html>

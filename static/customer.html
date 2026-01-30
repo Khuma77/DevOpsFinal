@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Каталог и корзина — Marketplace</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .cart-summary { margin-top: 2rem; padding: 1.5rem; background: #f3f4f6; border-radius: var(--radius); }
+    .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
+    .cart-item:last-child { border-bottom: none; }
+    .empty-cart { text-align: center; color: var(--text-secondary); padding: 3rem 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="dashboard-header">
+      <h1>Каталог товаров</h1>
+      <div style="display:flex; gap:1rem; align-items:center;">
+        <button class="btn btn-outline" onclick="viewCart()">Корзина (<span id="cartCount">0</span>)</button>
+        <button class="btn btn-outline" onclick="logout()">Выйти</button>
+      </div>
+    </div>
+
+    <!-- Каталог -->
+    <div id="productsGrid" class="card-grid"></div>
+    <div id="loader" class="loader" style="margin:3rem auto;"></div>
+    <div id="errorMsg" class="error-message" style="text-align:center; display:none;"></div>
+
+    <!-- Модальное окно корзины -->
+    <div id="cartModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+      <div class="card" style="width:90%; max-width:500px; max-height:90vh; overflow-y:auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+          <h2>Ваша корзина</h2>
+          <button class="btn btn-outline" onclick="closeCart()">Закрыть</button>
+        </div>
+
+        <div id="cartItems"></div>
+        <div id="cartEmpty" class="empty-cart" style="display:none;">Корзина пуста</div>
+
+        <div id="cartSummary" class="cart-summary" style="display:none;">
+          <div style="display:flex; justify-content:space-between; font-weight:600; margin-bottom:1rem;">
+            <span>Итого:</span>
+            <span id="totalPrice">0 сум</span>
+          </div>
+          <button class="btn btn-primary" style="width:100%;" onclick="checkout()">Оформить заказ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/main.js"></script>
+  <script>
+    const customerId = getUserId();
+    if (!customerId) window.location.href = 'login.html';
+
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+    function saveCart() {
+      localStorage.setItem('cart', JSON.stringify(cart));
+      document.getElementById('cartCount').textContent = cart.length;
+    }
+
+    function addToCart(product) {
+      const existing = cart.find(item => item.id === product.id);
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        cart.push({ ...product, quantity: 1 });
+      }
+      saveCart();
+      alert('Добавлено в корзину!');
+    }
+
+    function removeFromCart(productId) {
+      cart = cart.filter(item => item.id !== productId);
+      saveCart();
+      renderCart();
+    }
+
+    function changeQuantity(productId, delta) {
+      const item = cart.find(i => i.id === productId);
+      if (item) {
+        item.quantity = Math.max(1, item.quantity + delta);
+        saveCart();
+        renderCart();
+      }
+    }
+
+    function renderCart() {
+      const container = document.getElementById('cartItems');
+      const emptyEl = document.getElementById('cartEmpty');
+      const summaryEl = document.getElementById('cartSummary');
+
+      container.innerHTML = '';
+      if (cart.length === 0) {
+        emptyEl.style.display = 'block';
+        summaryEl.style.display = 'none';
+        return;
+      }
+
+      emptyEl.style.display = 'none';
+      summaryEl.style.display = 'block';
+
+      let total = 0;
+      container.innerHTML = cart.map(item => {
+        const subtotal = item.price * item.quantity;
+        total += subtotal;
+        return `
+          <div class="cart-item">
+            <div>
+              <strong>${item.name}</strong><br>
+              ${item.price} сум × ${item.quantity} = ${subtotal} сум
+            </div>
+            <div style="display:flex; gap:0.5rem; align-items:center;">
+              <button class="btn btn-outline" style="padding:0.5rem 0.75rem;" onclick="changeQuantity('${item.id}', -1)">-</button>
+              <span>${item.quantity}</span>
+              <button class="btn btn-outline" style="padding:0.5rem 0.75rem;" onclick="changeQuantity('${item.id}', 1)">+</button>
+              <button class="btn btn-danger" style="padding:0.5rem 0.75rem;" onclick="removeFromCart('${item.id}')">×</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('totalPrice').textContent = total + ' сум';
+    }
+
+    function viewCart() {
+      renderCart();
+      document.getElementById('cartModal').style.display = 'flex';
+    }
+
+    function closeCart() {
+      document.getElementById('cartModal').style.display = 'none';
+    }
+
+    async function checkout() {
+      if (cart.length === 0) return alert('Корзина пуста');
+
+      if (!confirm('Оформить заказ?')) return;
+
+      try {
+        for (const item of cart) {
+          // Для простоты: каждый товар — отдельный заказ
+          // Можно улучшить: один заказ с несколькими товарами
+          const formData = new FormData();
+          formData.append('customer_id', customerId);
+          formData.append('seller_id', item.seller_id || 'unknown'); // если seller_id есть в продукте
+          formData.append('product_id', item.id);
+          formData.append('quantity', item.quantity);
+          formData.append('total_price', item.price * item.quantity);
+
+          await apiFetch('/api/orders', { method: 'POST', body: formData });
+        }
+
+        alert('Заказ(ы) оформлены!');
+        cart = [];
+        saveCart();
+        closeCart();
+      } catch (err) {
+        alert('Ошибка оформления: ' + err.message);
+      }
+    }
+
+    // Загрузка каталога
+    async function loadProducts() {
+      try {
+        const data = await apiFetch('/api/products');
+        document.getElementById('loader').style.display = 'none';
+
+        const grid = document.getElementById('productsGrid');
+        if (data.length === 0) {
+          grid.innerHTML = '<p style="text-align:center;">Товаров пока нет</p>';
+          return;
+        }
+
+        grid.innerHTML = data.map(p => `
+          <div class="card product-card">
+            ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}">` : ''}
+            <div class="content">
+              <h3>${p.name}</h3>
+              <div class="price">${p.price} сум</div>
+              <p>${p.description || 'Без описания'}</p>
+              <p style="margin-top:0.5rem;">На складе: ${p.stock}</p>
+              <button class="btn btn-primary" style="margin-top:1rem; width:100%;" onclick='addToCart(${JSON.stringify(p)})'>
+                В корзину
+              </button>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        showError('errorMsg', err.message);
+        document.getElementById('loader').style.display = 'none';
+      }
+    }
+
+    window.addEventListener('load', () => {
+      loadProducts();
+      saveCart(); // обновляем счётчик при загрузке
+    });
+  </script>
+</body>
+</html>

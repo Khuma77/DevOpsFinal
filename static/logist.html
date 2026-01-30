@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Заказы на доставку — Marketplace</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .tabs { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
+    .tab-btn { padding: 0.75rem 1.5rem; border: none; background: var(--border); color: var(--text-primary); cursor: pointer; border-radius: var(--radius); transition: all 0.2s; }
+    .tab-btn.active { background: var(--accent); color: white; }
+    #modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+    .modal-content { background: white; padding: 2rem; border-radius: var(--radius); max-width: 400px; text-align: center; box-shadow: var(--shadow-md); }
+    .close-modal { margin-top: 1rem; padding: 0.75rem 1.5rem; background: var(--accent); color: white; border: none; border-radius: var(--radius); cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="dashboard-header">
+      <h1>Заказы на доставку</h1>
+      <button class="btn btn-outline" onclick="logout()">Выйти</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('new')">Новые заказы</button>
+      <button class="tab-btn" onclick="showTab('accepted')">Мои принятые заказы</button>
+    </div>
+
+    <div id="loader" class="loader" style="display:block;"></div>
+    <div id="ordersList" style="display:none;"></div>
+    <div id="errorMsg" class="error-message" style="text-align:center; display:none;"></div>
+  </div>
+
+  <!-- Модальное окно после принятия -->
+  <div id="modal">
+    <div class="modal-content">
+      <h2>Вы приняли заказ!</h2>
+      <p>Свяжитесь с покупателем и продавцом для деталей доставки:</p>
+      <div id="modalContent"></div>
+      <button class="close-modal" onclick="document.getElementById('modal').style.display='none'">Закрыть</button>
+    </div>
+  </div>
+
+  <script src="js/main.js"></script>
+  <script>
+    const logistId = getUserId();
+    if (!logistId) window.location.href = 'login.html';
+
+    let currentTab = 'new';
+
+    function showTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`.tab-btn[onclick="showTab('${tab}')"]`).classList.add('active');
+      loadOrders();
+    }
+
+    async function loadOrders() {
+      try {
+        const orders = await apiFetch(`/api/orders/logist?logist_id=${logistId}`);
+        const container = document.getElementById('ordersList');
+        document.getElementById('loader').style.display = 'none';
+        container.style.display = 'block';
+
+        if (orders.length === 0) {
+          container.innerHTML = '<p style="text-align:center; color:var(--text-secondary);">Нет заказов</p>';
+          return;
+        }
+
+        const users = await apiFetch('/api/users');
+        const products = await apiFetch('/api/products');
+
+        const filtered = currentTab === 'new' 
+          ? orders.filter(o => o.status === 'new')
+          : orders.filter(o => o.logist_id === logistId);
+
+        if (filtered.length === 0) {
+          container.innerHTML = '<p style="text-align:center; color:var(--text-secondary);">Нет заказов в этой вкладке</p>';
+          return;
+        }
+
+        container.innerHTML = filtered.map(order => {
+          const statusClass = {
+            'new': 'order-status-new',
+            'paid': 'order-status-paid',
+            'shipped': 'order-status-shipped',
+            'delivered': 'order-status-delivered',
+            'cancelled': 'order-status-cancelled'
+          }[order.status] || '';
+
+          const buyer = users.find(u => u.ID === order.customer_id) || { username: order.customer_id, phone: 'не указан' };
+          const seller = users.find(u => u.ID === order.seller_id) || { username: order.seller_id, phone: 'не указан' };
+          const product = products.find(p => p.id === order.product_id) || { name: order.product_id };
+
+          return `
+            <div class="card order-item">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <h3>Заказ #${order.id}</h3>
+                <span class="order-status ${statusClass}">${order.status.toUpperCase()}</span>
+              </div>
+              <p><strong>Покупатель:</strong> ${buyer.username || buyer.full_name || 'ID: ' + order.customer_id} (${buyer.phone})</p>
+              <p><strong>Продавец:</strong> ${seller.username || seller.full_name || 'ID: ' + order.seller_id} (${seller.phone})</p>
+              <p><strong>Товар:</strong> ${product.name || 'ID: ' + order.product_id}</p>
+              <p><strong>Количество:</strong> ${order.quantity} шт.</p>
+              <p><strong>Сумма:</strong> ${order.total_price} сум</p>
+              <p><strong>Создан:</strong> ${new Date(order.created_at).toLocaleString()}</p>
+
+              <div style="margin-top:1rem; display:flex; gap:0.75rem; flex-wrap:wrap;">
+                ${order.status === 'new' ? `
+                  <button class="btn btn-primary" onclick="assignOrder('${order.id}', '${buyer.phone}', '${seller.phone}')">Принять заказ</button>
+                ` : ''}
+                ${order.status === 'paid' || order.status === 'shipped' ? `
+                  <button class="btn btn-success" onclick="updateOrderStatus('${order.id}', 'delivered')">Доставлен</button>
+                ` : ''}
+                ${order.status !== 'delivered' && order.status !== 'cancelled' ? `
+                  <button class="btn btn-danger" onclick="updateOrderStatus('${order.id}', 'cancelled')">Отменить</button>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        showError('errorMsg', err.message);
+        document.getElementById('loader').style.display = 'none';
+      }
+    }
+
+    async function assignOrder(orderId, buyerPhone, sellerPhone) {
+      if (!confirm('Принять заказ?')) return;
+
+      try {
+        const params = new URLSearchParams();
+        params.append('logist_id', logistId);
+
+        await apiFetch(`/api/orders/${orderId}/assign-logist`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: params.toString()  // ← важно: .toString()
+        });
+
+        document.getElementById('modalContent').innerHTML = `
+          <p><strong>Телефон покупателя:</strong> ${buyerPhone}</p>
+          <p><strong>Телефон продавца:</strong> ${sellerPhone}</p>
+        `;
+        document.getElementById('modal').style.display = 'flex';
+
+        loadOrders();
+      } catch (err) {
+        alert('Ошибка: ' + err.message);
+      }
+    }
+
+    async function updateOrderStatus(orderId, newStatus) {
+      if (!confirm(`Статус → ${newStatus}?`)) return;
+
+      try {
+        const params = new URLSearchParams();
+        params.append('status', newStatus);
+
+        await apiFetch(`/api/orders/${orderId}/status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params.toString()
+        });
+
+        alert('Статус обновлён!');
+        loadOrders();
+      } catch (err) {
+        alert('Ошибка: ' + err.message);
+      }
+    }
+
+    window.addEventListener('load', loadOrders);
+  </script>
+</body>
+</html>
