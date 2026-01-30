@@ -72,7 +72,7 @@ spec:
         - name: google-credentials
           secret:
             secretName: {{ .Values.googleSheets.credentialsSecret }}
-        {{- if .Values.persistence.enabled }}
+        {{- if and .Values.persistence.enabled (ne .Values.persistence.enabled false) }}
         - name: logs-storage
           persistentVolumeClaim:
             claimName: {{ include "marketplace.fullname" . }}-logs
