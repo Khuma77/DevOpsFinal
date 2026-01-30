@@ -27,3 +27,7 @@ env:
     value: "development"
   - name: LOG_LEVEL
     value: "DEBUG"
+
+# Disable persistence for dev environment
+persistence:
+  enabled: false

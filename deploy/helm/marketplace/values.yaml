@@ -104,7 +104,7 @@ healthCheck:
 
 # Persistence for logs
 persistence:
-  enabled: true
+  enabled: false  # Disable persistence for now
   storageClass: "standard"
   accessMode: ReadWriteOnce
   size: 1Gi
