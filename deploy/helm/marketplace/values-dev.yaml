@@ -2,7 +2,7 @@
 replicaCount: 1
 
 image:
-  tag: "614e787f23370c211c725132ac5a393c86129c7e"
+  tag: "11e481193786e4d113edcd60351c767e7b49b773"
 
 ingress:
   hosts:
